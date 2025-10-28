@@ -1,6 +1,6 @@
 export const COSMOS_CHAINS = {
   Osmosis: 'osmosis',
-  Dydx: 'dydx',
+  Injective: 'injective',
   Axelar: 'axelar',
 };
 

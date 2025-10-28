@@ -71,10 +71,10 @@ export const contract = async (
     },
   );
 
-  const { makeRemoteChannel: makeDydxRemoteChannel } = orchestrateAll(
+  const { makeRemoteChannel: makeinjectiveRemoteChannel } = orchestrateAll(
     { makeRemoteChannel: crossChainFlow.makeRemoteChannel },
     {
-      chainName: 'Dydx',
+      chainName: 'Injective',
       chainHub,
       log,
     },
@@ -86,8 +86,8 @@ export const contract = async (
   const osmosisRemoteChannel = zone.makeOnce('OsmosisRemoteChannel', () =>
     makeOsmosisRemoteChannel(),
   );
-  const dydxRemoteChannel = zone.makeOnce('DydxRemoteChannel', () =>
-    makeDydxRemoteChannel(),
+  const injectiveRemoteChannel = zone.makeOnce('InjectiveRemoteChannel', () =>
+    makeinjectiveRemoteChannel(),
   );
 
   const makeAccountKit = prepareAccountKit(zone.subZone('evmTap'), {
@@ -105,7 +105,7 @@ export const contract = async (
       chainHub,
       axelarRemoteChannel,
       osmosisRemoteChannel,
-      dydxRemoteChannel,
+      injectiveRemoteChannel,
     },
   );
 

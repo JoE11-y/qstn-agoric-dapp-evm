@@ -34,7 +34,7 @@ const trace = makeTracer('CrossChainLCA');
  *  log: GuestOf<(msg: string) => Vow<void>>;
  *  axelarRemoteChannel: Promise<RemoteChannelInfo>,
  *  osmosisRemoteChannel: Promise<RemoteChannelInfo>,
- *  dydxRemoteChannel: Promise<RemoteChannelInfo>,
+ *  injectiveRemoteChannel: Promise<RemoteChannelInfo>,
  * }} ctx
  * @param {ZCFSeat} seat
  */
@@ -46,7 +46,7 @@ export const createAndMonitorLCA = async (
     log,
     axelarRemoteChannel,
     osmosisRemoteChannel,
-    dydxRemoteChannel,
+    injectiveRemoteChannel,
   },
   seat,
 ) => {
@@ -65,7 +65,7 @@ export const createAndMonitorLCA = async (
 
   const axelar = await axelarRemoteChannel;
   const osmosis = await osmosisRemoteChannel;
-  const dydx = await dydxRemoteChannel;
+  const injective = await injectiveRemoteChannel;
 
   const accountKit = makeAccountKit({
     localAccount,
@@ -74,7 +74,7 @@ export const createAndMonitorLCA = async (
     assets,
     axelarRemoteChannel: axelar,
     osmosisRemoteChannel: osmosis,
-    dydxRemoteChannel: dydx,
+    injectiveRemoteChannel: injective,
   });
 
   void log('tap created successfully');

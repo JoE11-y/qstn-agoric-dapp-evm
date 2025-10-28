@@ -39,7 +39,7 @@ export type AccountTapState = {
   assets: any;
   axelarRemoteChannel: RemoteChannelInfo;
   osmosisRemoteChannel: RemoteChannelInfo;
-  dydxRemoteChannel: RemoteChannelInfo;
+  injectiveRemoteChannel: RemoteChannelInfo;
 };
 
 export type ContractCall = {

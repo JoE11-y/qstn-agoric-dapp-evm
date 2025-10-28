@@ -41,7 +41,7 @@ const AccountKitStateShape = {
   assets: M.any(),
   axelarRemoteChannel: M.any(),
   osmosisRemoteChannel: M.any(),
-  dydxRemoteChannel: M.any(),
+  injectiveRemoteChannel: M.any(),
 };
 harden(AccountKitStateShape);
 
@@ -189,8 +189,8 @@ export const prepareAccountKit = (zone, { zcf, vowTools, log, zoeTools }) => {
 
               if (remoteChain == 'Osmosis') {
                 remoteChannel = this.state.osmosisRemoteChannel;
-              } else if (remoteChain == 'Dydx') {
-                remoteChannel = this.state.dydxRemoteChannel;
+              } else if (remoteChain == 'Injective') {
+                remoteChannel = this.state.injectiveRemoteChannel;
               } else {
                 Fail`Unsupported Cosmos chain: ${remoteChain}`;
               }
