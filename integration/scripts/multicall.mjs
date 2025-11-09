@@ -34,7 +34,7 @@ try {
   log('Preparing offer...');
   const offer = await prepareOffer({
     invitationMakerName: 'makeEVMTransactionInvitation',
-    instanceName: 'axelarGmp',
+    instanceName: 'qstnRouter',
     emptyProposal: true,
     source: 'continuing',
     invitationArgs,
@@ -100,7 +100,7 @@ try {
 
   const multiCallOffer = await prepareOffer({
     invitationMakerName: 'makeEVMTransactionInvitation',
-    instanceName: 'axelarGmp',
+    instanceName: 'qstnRouter',
     invitationArgs: harden([
       'sendGmp',
       [
@@ -135,7 +135,7 @@ try {
 
   const latestMessageOffer = await prepareOffer({
     invitationMakerName: 'makeEVMTransactionInvitation',
-    instanceName: 'axelarGmp',
+    instanceName: 'qstnRouter',
     emptyProposal: true,
     source: 'continuing',
     invitationArgs: harden(['getLatestMessage', []]),

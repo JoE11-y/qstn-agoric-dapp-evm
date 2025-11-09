@@ -30,6 +30,35 @@ const config: HardhatUserConfig = {
     ],
   },
   defaultNetwork: 'hardhat',
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+    customChains: [
+      {
+        network: 'base',
+        chainId: 84532,
+        urls: {
+          apiURL: 'https://api-sepolia.base.org/api',
+          browserURL: 'https://sepolia.base.org',
+        },
+      },
+      {
+        network: 'fuji',
+        chainId: 43113,
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm',
+          browserURL: 'https://testnet.snowtrace.io',
+        },
+      },
+      {
+        network: 'eth',
+        chainId: 11155111,
+        urls: {
+          apiURL: 'https://api-sepolia.etherscan.io/api',
+          browserURL: 'https://sepolia.etherscan.io',
+        },
+      },
+    ],
+  },
   networks: {
     hardhat: {
       chainId: 31337,
@@ -60,6 +89,10 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 20000,
   },
+  sourcify: {
+    enabled: true,
+  },
 };
 
 export default config;
+//

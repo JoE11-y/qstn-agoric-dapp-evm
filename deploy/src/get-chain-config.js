@@ -4,6 +4,14 @@ import { execFileSync } from 'node:child_process';
 import { makeAgd } from '../tools/agd-lib.js';
 import { networkConfigs } from './config.js';
 import { chainInfo } from './static-config.js';
+// import { execFileSync as _execFileSync } from 'node:child_process';
+
+// container name
+// const AGD_CONTAINER = 'agoric';
+
+// // wrapper that runs agd inside Docker
+// const dockerExec = (file, args, opts) =>
+//   _execFileSync('docker', ['exec', AGD_CONTAINER, file, ...args], opts);
 
 /**
  * @import {IBCChannelID, IBCConnectionID} from '@agoric/vats';
@@ -46,19 +54,28 @@ export const getChainConfig = async ({ net, peer }) => {
   const portId = 'transfer';
 
   const { chainId, rpc } = networkConfigs[net];
-  const agd = makeAgd({ execFileSync }).withOpts({ rpcAddrs: [rpc] });
+
+  console.log(
+    `Getting chain config for net=${net} chainId=${chainId} rpc=${rpc}`,
+  );
+
+  const agd = makeAgd({ execFileSync }).withOpts({
+    rpcAddrs: [rpc],
+  });
 
   for (const [peerName, myConn, myChan, denom] of parsePeers(peer)) {
-    console.debug(peerName, { denom });
     const connInfo = await agd
       .query(['ibc', 'connection', 'end', myConn])
       .then((x) => x.connection);
+
     const { client_id } = connInfo;
+
     const clientState = await agd
       .query(['ibc', 'client', 'state', client_id])
       .then((x) => x.client_state);
+
     const { chain_id: peerId } = clientState;
-    console.debug(peerName, { chainId: peerId, denom });
+
     chainDetails[peerName] = {
       namespace: 'cosmos',
       reference: peerId,

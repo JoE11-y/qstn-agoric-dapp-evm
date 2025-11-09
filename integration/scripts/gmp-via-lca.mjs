@@ -40,7 +40,7 @@ try {
   ];
   const offer = await prepareOffer({
     invitationMakerName: 'makeEVMTransactionInvitation',
-    instanceName: 'axelarGmp',
+    instanceName: 'qstnRouter',
     invitationArgs: harden([
       'sendGmp',
       [
@@ -76,7 +76,7 @@ try {
   log('Preparing offer to get latest message...');
   const latestMessageOffer = await prepareOffer({
     invitationMakerName: 'makeEVMTransactionInvitation',
-    instanceName: 'axelarGmp',
+    instanceName: 'qstnRouter',
     source: 'continuing',
     invitationArgs: harden(['getLatestMessage', []]),
     previousOffer,

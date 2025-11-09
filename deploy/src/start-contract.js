@@ -11,7 +11,7 @@ import { E } from '@endo/far';
  * @import {Issuer} from '@agoric/ertp';
  * @import {Installation, Instance} from '@agoric/zoe/src/zoeService/utils.js';
  * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
- * @import {start as StartFn} from 'contract/src/qstn.contract.js';
+ * @import {start as StartFn} from 'contract/src/qstn.router.js';
  */
 
 const trace = makeTracer('start qstn contract', true);
@@ -20,12 +20,12 @@ const trace = makeTracer('start qstn contract', true);
  * @param {BootstrapPowers & {
  *   installation: {
  *     consume: {
- *       qstnContract: Installation<StartFn>;
+ *       qstnRouter: Installation<StartFn>;
  *     };
  *   };
  *   instance: {
  *     produce: {
- *       qstnContract: Producer<Instance<StartFn>>
+ *       qstnRouter: Producer<Instance<StartFn>>
  *     };
  *   };
  *   issuer: {
@@ -42,7 +42,7 @@ const trace = makeTracer('start qstn contract', true);
  *   };
  * }} config
  */
-export const startQstnContract = async (
+export const qstnRouter = async (
   {
     consume: {
       agoricNames,
@@ -54,10 +54,10 @@ export const startQstnContract = async (
       startUpgradable,
     },
     installation: {
-      consume: { qstnContract },
+      consume: { qstnRouter },
     },
     instance: {
-      produce: { qstnContract: produceInstance },
+      produce: { qstnRouter: produceInstance },
     },
     issuer: {
       consume: { BLD, IST },
@@ -65,7 +65,7 @@ export const startQstnContract = async (
   },
   { options: { chainInfo, assetInfo } },
 ) => {
-  trace(startQstnContract.name);
+  trace(qstnRouter.name);
 
   const marshaller = await E(board).getReadonlyMarshaller();
 
@@ -78,7 +78,7 @@ export const startQstnContract = async (
       marshaller,
       orchestrationService: cosmosInterchainService,
       storageNode: E(NonNullish(await chainStorage)).makeChildNode(
-        'qstnContract',
+        'qstnRouter',
       ),
       timerService: chainTimerService,
       chainInfo,
@@ -98,34 +98,41 @@ export const startQstnContract = async (
     E(agoricNames).lookup('issuer', 'AXL'),
   );
 
-  // const wavaxIssuer = await safeFulfill(() =>
-  //   E(agoricNames).lookup('issuer', 'WAVAX'),
+  // const uosmoIssuer = await safeFulfill(() =>
+  //   E(agoricNames).lookup('issuer', 'OSMO'),
   // );
+
+  // const ntrnIssuer = await safeFulfill(() =>
+  //   E(agoricNames).lookup('issuer', 'NTRN'),
+  // );
+
+  // const atomIssuer = await safeFulfill(() =>
 
   const issuerKeywordRecord = harden({
     BLD: await BLD,
     IST: await IST,
     ...(axlIssuer && { AXL: axlIssuer }),
-    // ...(wavaxIssuer && { WAVAX: wavaxIssuer }),
+    // ...(uosmoIssuer && { OSMO: uosmoIssuer }),
+    // ...(ntrnIssuer && { untrn: ntrnIssuer }),
   });
   trace('issuerKeywordRecord', issuerKeywordRecord);
 
   trace('Starting contract instance');
   const { instance } = await E(startUpgradable)({
-    label: 'qstnContract',
-    installation: qstnContract,
+    label: 'qstnRouter',
+    installation: qstnRouter,
     issuerKeywordRecord,
     privateArgs,
   });
   produceInstance.resolve(instance);
   trace('done');
 };
-harden(startQstnContract);
+harden(qstnRouter);
 
 export const getManifest = ({ restoreRef }, { installationRef, options }) => {
   return {
     manifest: {
-      [startQstnContract.name]: {
+      [qstnRouter.name]: {
         consume: {
           agoricNames: true,
           board: true,
@@ -137,10 +144,10 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
           startUpgradable: true,
         },
         installation: {
-          consume: { qstnContract: true },
+          consume: { qstnRouter: true },
         },
         instance: {
-          produce: { qstnContract: true },
+          produce: { qstnRouter: true },
         },
         issuer: {
           consume: { BLD: true, IST: true },
@@ -148,7 +155,7 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
       },
     },
     installations: {
-      qstnContract: restoreRef(installationRef),
+      qstnRouter: restoreRef(installationRef),
     },
     options,
   };

@@ -1,0 +1,10 @@
+{
+  "managers": [
+    {
+      "addr": "agoric1fhyal0fl5ydafjng6dj0nh4wrrnaxcfy09ftgn",
+      "pub_key": "jiocx/1z7UedRH4YG76IKNt0muJwaBThZS4BqCJwHls="
+    }
+  ],
+  "receiver_prefix": "agoric",
+  "channel_id": "channel-1748"
+}

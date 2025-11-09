@@ -12,7 +12,7 @@ import { buildGMPPayload } from 'contract/utils/gmp.js';
 import { makeReceiveUpCallPayload } from './utils/makeReceiveUpCallPayload.js';
 import { encodeAbiParameters } from 'viem';
 
-type MakeEVMTransactionParams = {
+type MakeTransactionParams = {
   wallet: SmartWalletDriver;
   previousOffer: string;
   methodName: string;
@@ -20,7 +20,7 @@ type MakeEVMTransactionParams = {
   proposal: any;
 };
 
-type AxelarGmpMemo = {
+type qstnRouterMemo = {
   source_chain: string;
   source_address: string;
   payload: string;
@@ -46,26 +46,26 @@ const makeTestContext = async (t: ExecutionContext) => {
   return fullCtx;
 };
 
-let evmTransactionCounter = 0;
+let transactionCounter = 0;
 let previousOffer = '';
 let lcaAddress = '';
 
-const makeEVMTransaction = async ({
+const makeTransaction = async ({
   wallet,
   methodName,
   offerArgs,
   proposal,
-}: MakeEVMTransactionParams) => {
-  const id = `evmTransaction${evmTransactionCounter}`;
+}: MakeTransactionParams) => {
+  const id = `transaction${transactionCounter}`;
 
   const proposeInvitationSpec: ContinuingInvitationSpec = {
     source: 'continuing',
     previousOffer,
-    invitationMakerName: 'makeEVMTransactionInvitation',
+    invitationMakerName: 'makeTransactionInvitation',
     invitationArgs: harden([methodName, offerArgs]),
   };
 
-  evmTransactionCounter += 1;
+  transactionCounter += 1;
 
   await wallet.executeOffer({
     id,
@@ -93,6 +93,18 @@ test.before(async (t) => {
             issuerName: 'AXL',
             decimalPlaces: 6,
           },
+          {
+            denom:
+              'ibc/6469BDA6F62C4F4B8F76629FA1E72A02A3D1DD9E2B22DDB3C3B2296DEAD29AB8',
+            issuerName: 'OSMO',
+            decimalPlaces: 6,
+          },
+          {
+            denom:
+              'ibc/126DA09104B71B164883842B769C0E9EC1486C0887D27A9999E395C2C8FB5682',
+            issuerName: 'NTRN',
+            decimalPlaces: 6,
+          },
         ]),
       ],
     ),
@@ -109,10 +121,10 @@ test.before(async (t) => {
 });
 
 test.beforeEach((t) => {
-  t.context.storage.data.delete('published.axelarGmp.log');
+  t.context.storage.data.delete('published.qstnRouter.log');
 });
 
-test.serial('makeAccount via axelarGmp', async (t) => {
+test.serial('makeAccount via qstnRouter', async (t) => {
   const {
     storage,
     wallet,
@@ -126,7 +138,7 @@ test.serial('makeAccount via axelarGmp', async (t) => {
     id: 'axelarMakeAccountCall',
     invitationSpec: {
       source: 'agoricContract',
-      instancePath: ['axelarGmp'],
+      instancePath: ['qstnRouter'],
       callPipe: [['createAndMonitorLCA']],
     },
     proposal: {
@@ -136,7 +148,7 @@ test.serial('makeAccount via axelarGmp', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.axelarGmp.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside createAndMonitorLCA',
@@ -172,7 +184,7 @@ test.serial('makeAccount via axelarGmp', async (t) => {
 test.serial('get lca address', async (t) => {
   const { wallet } = t.context;
 
-  await makeEVMTransaction({
+  await makeTransaction({
     wallet,
     previousOffer,
     methodName: 'getLocalAddress',
@@ -185,7 +197,7 @@ test.serial('get lca address', async (t) => {
   t.truthy(lcaAddress);
   t.like(wallet.getLatestUpdateRecord(), {
     status: {
-      id: `evmTransaction${evmTransactionCounter - 1}`,
+      id: `evmTransaction${transactionCounter - 1}`,
       numWantsSatisfied: 1,
       result: lcaAddress,
     },
@@ -232,11 +244,11 @@ test.serial('receiveUpCall test', async (t) => {
           ],
         }),
         type: 1,
-      } satisfies AxelarGmpMemo),
+      } satisfies qstnRouterMemo),
     }),
   );
 
-  await makeEVMTransaction({
+  await makeTransaction({
     wallet,
     previousOffer,
     methodName: 'getAddress',
@@ -250,7 +262,7 @@ test.serial('receiveUpCall test', async (t) => {
 
   t.like(wallet.getLatestUpdateRecord(), {
     status: {
-      id: `evmTransaction${evmTransactionCounter - 1}`,
+      id: `evmTransaction${transactionCounter - 1}`,
       numWantsSatisfied: 1,
       result: evmSmartWalletAddress,
     },
@@ -260,7 +272,7 @@ test.serial('receiveUpCall test', async (t) => {
 test.serial('make offers using the lca', async (t) => {
   const { wallet } = t.context;
 
-  await makeEVMTransaction({
+  await makeTransaction({
     wallet,
     previousOffer,
     methodName: 'send',
@@ -277,7 +289,7 @@ test.serial('make offers using the lca', async (t) => {
 
   t.like(wallet.getLatestUpdateRecord(), {
     status: {
-      id: `evmTransaction${evmTransactionCounter - 1}`,
+      id: `evmTransaction${transactionCounter - 1}`,
       numWantsSatisfied: 1,
       result: 'transfer success',
     },
@@ -288,7 +300,7 @@ test.serial('token transfers using lca', async (t) => {
   const { storage, wallet } = t.context;
   const { BLD } = t.context.agoricNamesRemotes.brand;
 
-  await makeEVMTransaction({
+  await makeTransaction({
     wallet,
     previousOffer,
     methodName: 'sendGmp',
@@ -305,7 +317,7 @@ test.serial('token transfers using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.axelarGmp.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',
@@ -317,7 +329,7 @@ test.serial('token transfers using lca', async (t) => {
 
   t.like(wallet.getLatestUpdateRecord(), {
     status: {
-      id: `evmTransaction${evmTransactionCounter - 1}`,
+      id: `evmTransaction${transactionCounter - 1}`,
       result: 'sendGmp successful',
     },
   });
@@ -325,7 +337,7 @@ test.serial('token transfers using lca', async (t) => {
   t.log('make offer with 0 amount');
 
   await t.throwsAsync(
-    makeEVMTransaction({
+    makeTransaction({
       wallet,
       previousOffer,
       methodName: 'sendGmp',
@@ -358,7 +370,7 @@ test.serial('make contract calls using lca', async (t) => {
     },
   ];
 
-  await makeEVMTransaction({
+  await makeTransaction({
     wallet,
     previousOffer,
     methodName: 'sendGmp',
@@ -377,7 +389,7 @@ test.serial('make contract calls using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.axelarGmp.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',
@@ -390,7 +402,7 @@ test.serial('make contract calls using lca', async (t) => {
 
   t.like(wallet.getLatestUpdateRecord(), {
     status: {
-      id: `evmTransaction${evmTransactionCounter - 1}`,
+      id: `evmTransaction${transactionCounter - 1}`,
       result: 'sendGmp successful',
     },
   });
@@ -398,7 +410,7 @@ test.serial('make contract calls using lca', async (t) => {
   t.log('make offer without contractInvocationData');
 
   await t.throwsAsync(
-    makeEVMTransaction({
+    makeTransaction({
       wallet,
       previousOffer,
       methodName: 'sendGmp',
@@ -422,7 +434,7 @@ test.serial('make contract calls using lca', async (t) => {
   t.log('make offer without passing gas amount');
 
   await t.throwsAsync(
-    makeEVMTransaction({
+    makeTransaction({
       wallet,
       previousOffer,
       methodName: 'sendGmp',

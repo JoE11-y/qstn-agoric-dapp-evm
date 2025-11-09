@@ -18,7 +18,7 @@ export type AxelarFeeObject = {
   recipient: Bech32Address;     // Who receives the fee
 };
 
-export type AxelarGmpOutgoingMemo = {
+export type axelarGmpOutgoingMemo = {
   destination_chain: string;     // Name of the target chain (like "Ethereum")
   destination_address: string;   // Address on the target chain
   payload: number[] | null;      // Data to be sent (e.g. for smart contract)

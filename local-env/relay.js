@@ -15,28 +15,25 @@ const runRelay = async () => {
     defaultAxelarChainInfo,
   );
 
-  const Factory = require('../solidity/artifacts/contracts/Factory.sol/Factory.json');
-  const MulticallTester = require('../solidity/artifacts/contracts/MulticallTester.sol/MulticallTester.json');
+  const QuizzlerV2 = require('../solidity/artifacts/contracts/QuizzlerV2.sol/QuizzlerV2.json');
 
   const ethereumNetwork = await createNetwork({ name: 'Ethereum' });
-  // Deploy factory contract
-  const multicallTesterContract = await deployContract(
-    ethereumNetwork.userWallets[0],
-    MulticallTester,
-    [],
-  );
 
   // Deploy factory contract
-  const factoryContract = await deployContract(
+  const quizzlerContract = await deployContract(
     ethereumNetwork.userWallets[0],
-    Factory,
+    QuizzlerV2,
     [
       ethereumNetwork.gateway.address,
-      ethereumNetwork.gasService.address,
+      // ethereumNetwork.gasService.address,
+      'Sender',
       'Ethereum',
     ],
   );
-  console.log('Factory contract deployed at address:', factoryContract.address);
+  console.log(
+    'Quizzler contract deployed at address:',
+    quizzlerContract.address,
+  );
 
   // Deploy tokens
   const tokenContract = await ethereumNetwork.deployToken(

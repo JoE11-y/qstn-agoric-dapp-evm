@@ -5,12 +5,12 @@ import { encodeFunctionData, encodeAbiParameters, hexToBytes } from 'viem';
  * @import {Bech32Address} from '@agoric/orchestration';
  */
 
-export const AxelarGMPMessageType = /** @type {const} */ ({
+export const axelarGmpMessageType = /** @type {const} */ ({
   MESSAGE_ONLY: 1,
   MESSAGE_WITH_TOKEN: 2,
   TOKEN_ONLY: 3,
 });
-harden(AxelarGMPMessageType);
+harden(axelarGmpMessageType);
 
 /** @type {{ AXELAR_GMP: Bech32Address, AXELAR_GAS: Bech32Address, OSMOSIS_RECEIVER: Bech32Address }} */
 export const gmpAddresses = {

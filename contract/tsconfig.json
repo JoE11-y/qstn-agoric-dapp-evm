@@ -22,5 +22,8 @@
     "rewriteRelativeImportExtensions": true,
     "noEmit": true
   },
-  "include": ["utils", "src"]
+  "include": [
+    "utils",
+    "src"
+  ]
 }

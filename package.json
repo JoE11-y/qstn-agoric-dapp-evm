@@ -12,12 +12,12 @@
     "build:deploy": "cd deploy && yarn build",
     "build:ui": "cd ui && yarn build",
     "build:local-env": "cd local-env && yarn build",
-    "build": "concurrently \"yarn build:solidity\" \"yarn build:local-env\" \"yarn build:ui\"",
+    "build": "yarn build:solidity && yarn build:local-env",
     "local-env:start": "cd local-env && yarn start",
     "local-env:relay": "cd local-env && yarn relay",
     "deploy:token": "cd deploy && yarn register:token",
-    "deploy:axelarGmp": "cd deploy && yarn deploy",
-    "deploy:contracts": "yarn deploy:token && yarn deploy:axelarGmp",
+    "deploy:qstnRouter": "cd deploy && yarn deploy",
+    "deploy:contracts": "yarn deploy:token && yarn deploy:qstnRouter",
     "postinstall": "patch-package"
   },
   "private": true,
@@ -35,8 +35,8 @@
     "printWidth": 80
   },
   "resolutions": {
-    "@agoric/vats": "^0.16.0-u20.0",
-    "@agoric/zoe": "^0.27.0-u20.0"
+    "@agoric/vats": "^0.16.0-u21.0",
+    "@agoric/zoe": "^0.27.0-u21.0"
   },
   "keywords": [],
   "author": "",

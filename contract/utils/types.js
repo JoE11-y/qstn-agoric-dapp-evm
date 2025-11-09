@@ -1,13 +1,13 @@
 import '@agoric/vats/src/types.js';
 
 /**
- * @import {AxelarGMPMessageType} from '../utils/gmp';
+ * @import {axelarGmpMessageType} from '../utils/gmp';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
  * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
  */
 
 /**
- * @typedef {(typeof AxelarGMPMessageType)[keyof typeof AxelarGMPMessageType]} GMPMessageType
+ * @typedef {(typeof axelarGmpMessageType)[keyof typeof axelarGmpMessageType]} GMPMessageType
  */
 
 /**

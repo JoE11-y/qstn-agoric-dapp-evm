@@ -7,13 +7,13 @@ if (!planFile) throw new Error('PLAN_FILE environment variable is required.');
 
 const CI = process.env.CI === 'true';
 const createVault = process.env.createVault === 'true';
-const runInsideContainer = process.env.runInsideContainer == 'true';
+const runInsideContainer = process.env.runInsideContainer === 'true';
 
-const CHAINID = 'agoriclocal';
+const CHAINID = 'agoricdev-25';
 const GAS_ADJUSTMENT = '1.2';
-const SIGN_BROADCAST_OPTS = `--keyring-backend=test --chain-id=${CHAINID} --gas=auto --gas-adjustment=${GAS_ADJUSTMENT} --yes -b block`;
-const walletName = 'gov1';
-const agops = '/usr/src/agoric-sdk/packages/agoric-cli/bin/agops';
+const SIGN_BROADCAST_OPTS = `--chain-id=${CHAINID} --gas=auto --gas-adjustment=${GAS_ADJUSTMENT} --yes -b block --node https://devnet.rpc.agoric.net`;
+const walletName = 'qstn';
+// const agops = '~/tools/agoric-sdk/packages/agoric-cli/bin/agops';
 
 let script = '';
 let permit = '';
@@ -40,8 +40,10 @@ const setPermitAndScript = async () => {
   permit = await jqExtract('.permit');
 
   if (CI) {
-    script = `/usr/src/upgrade-test-scripts/${script}`;
-    permit = `/usr/src/upgrade-test-scripts/${permit}`;
+    // script = `/usr/src/upgrade-test-scripts/${script}`;
+    // permit = `/usr/src/upgrade-test-scripts/${permit}`;
+    script = `./${script}`;
+    permit = `./${permit}`;
   }
 
   if (!script || !permit) {
@@ -61,35 +63,59 @@ const setBundleFiles = async () => {
     .map((line) => `${line}${suffix}`);
 };
 
-const copyFilesToContainer = async () => {
+const copyFilesLocally = async () => {
   if (CI) {
     console.log('Skipping file copy: running in CI environment');
     return;
   }
 
-  const containerID = 'agoric';
-  const targetDir = '/usr/src/';
+  const targetDir = './';
 
   console.log('Copying script, permit, and plan...');
-  await execa('docker', ['cp', script, `${containerID}:${targetDir}`]);
-  await execa('docker', ['cp', permit, `${containerID}:${targetDir}`]);
-  await execa('docker', ['cp', planFile, `${containerID}:${targetDir}`]);
+  // await execa('cp', [script, targetDir]);
+  // await execa('cp', [permit, targetDir]);
+  // await execa('cp', [planFile, targetDir]);
 
   console.log('Copying bundle files...');
   const files = (await jqExtract('.bundles[].fileName')).split('\n');
   for (const file of files) {
     if (fs.existsSync(file)) {
-      await execa('docker', ['cp', file, `${containerID}:${targetDir}`]);
+      await execa('cp', [file, targetDir]);
     } else {
       console.warn(`Warning: File ${file} not found.`);
     }
   }
 };
 
+// const copyFilesToContainer = async () => {
+//   if (CI) {
+//     console.log('Skipping file copy: running in CI environment');
+//     return;
+//   }
+
+//   const containerID = 'agoric';
+//   const targetDir = '/usr/src/';
+
+//   console.log('Copying script, permit, and plan...');
+//   await execa('docker', ['cp', script, `${containerID}:${targetDir}`]);
+//   await execa('docker', ['cp', permit, `${containerID}:${targetDir}`]);
+//   await execa('docker', ['cp', planFile, `${containerID}:${targetDir}`]);
+
+//   console.log('Copying bundle files...');
+//   const files = (await jqExtract('.bundles[].fileName')).split('\n');
+//   for (const file of files) {
+//     if (fs.existsSync(file)) {
+//       await execa('docker', ['cp', file, `${containerID}:${targetDir}`]);
+//     } else {
+//       console.warn(`Warning: File ${file} not found.`);
+//     }
+//   }
+// };
+
 const installBundles = async () => {
   for (const b of bundleFiles) {
-    let cmd = CI ? `cd /usr/src/upgrade-test-scripts && ` : `cd /usr/src && `;
-
+    // let cmd = CI ? `cd /usr/src/upgrade-test-scripts && ` : `cd /usr/src && `;
+    let cmd = `cd . && `;
     cmd += `echo 'Installing ${b}' && ls -sh '${b}' && agd tx swingset install-bundle --compress '@${b}' --from ${walletName} -bblock ${SIGN_BROADCAST_OPTS}`;
     console.log(`Executing installation for bundle ${b}`);
     await execCmd(cmd);
@@ -97,34 +123,35 @@ const installBundles = async () => {
   }
 };
 
-const openVault = async () => {
-  const wantMinted = 450;
-  const giveCollateral = 90;
-  const walletAddress = 'agoric1ee9hr0jyrxhy999y755mp862ljgycmwyp4pl7q';
+// const openVault = async () => {
+//   const wantMinted = 450;
+//   const giveCollateral = 90;
+//   const walletAddress = 'agoric1ee9hr0jyrxhy999y755mp862ljgycmwyp4pl7q';
 
-  if (createVault && walletAddress) {
-    console.log('Creating the vault...');
-    const openCmd = `${agops} vaults open --wantMinted ${wantMinted} --giveCollateral ${giveCollateral} > /tmp/want-ist.json`;
-    await execCmd(openCmd);
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    const execOffer = `${agops} perf satisfaction --executeOffer /tmp/want-ist.json --from ${walletAddress} --keyring-backend=test`;
-    console.log('Executing the offer...');
-    await execCmd(execOffer);
-  } else {
-    console.log('Vault not created');
-  }
-};
+//   if (createVault && walletAddress) {
+//     console.log('Creating the vault...');
+//     const openCmd = `${agops} vaults open --wantMinted ${wantMinted} --giveCollateral ${giveCollateral} > /tmp/want-ist.json`;
+//     await execCmd(openCmd);
+//     await new Promise((resolve) => setTimeout(resolve, 5000));
+//     const execOffer = `${agops} perf satisfaction --executeOffer /tmp/want-ist.json --from ${walletAddress} --keyring-backend=test`;
+//     console.log('Executing the offer...');
+//     await execCmd(execOffer);
+//   } else {
+//     console.log('Vault not created');
+//   }
+// };
 
 const acceptProposal = async () => {
   console.log(`Submitting proposal to evaluate ${script}`);
 
-  const baseDir = CI ? '/usr/src/upgrade-test-scripts' : '/usr/src';
-  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install ${script}' --description='Evaluate ${script}' --deposit=10000000ubld --from ${walletName} ${SIGN_BROADCAST_OPTS} -o json`;
+  // const baseDir = CI ? '/usr/src/upgrade-test-scripts' : '/usr/src';
+  const baseDir = '.';
+  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install ${script}' --description='Evaluate ${script}' --deposit=10000ubld --from ${walletName} ${SIGN_BROADCAST_OPTS} -o json`;
   await execCmd(submitCommand);
 
   await new Promise((resolve) => setTimeout(resolve, 5000));
 
-  const queryCmd = `cd ${baseDir} && agd query gov proposals --output json | jq -c '[.proposals[] | if .proposal_id == null then .id else .proposal_id end | tonumber] | max'`;
+  const queryCmd = `cd ${baseDir} && agd query gov proposals --node https://devnet.rpc.agoric.net --output json | jq -c '[.proposals[] | if .proposal_id == null then .id else .proposal_id end | tonumber] | max'`;
 
   const result = runInsideContainer
     ? await execa('docker', ['exec', '-i', 'agoric', 'bash', '-c', queryCmd])
@@ -138,14 +165,16 @@ const acceptProposal = async () => {
         return proposalId;
       })();
 
-  console.log(`Voting on proposal ID ${proposalId}`);
-  await execCmd(
-    `agd tx gov vote ${proposalId} yes --from=validator ${SIGN_BROADCAST_OPTS}`,
-  );
+  console.log(`Submitted proposal ID: ${proposalId}`);
 
-  console.log(`Fetching details for proposal ID ${proposalId}`);
-  const detailsCommand = `agd query gov proposals --output json | jq -c '.proposals[] | select(.proposal_id == "${proposalId}" or .id == "${proposalId}") | [.proposal_id or .id, .voting_end_time, .status]'`;
-  await execCmd(detailsCommand);
+  // console.log(`Voting on proposal ID ${proposalId}`);
+  // await execCmd(
+  //   `agd tx gov vote ${proposalId} yes --from=qstn ${SIGN_BROADCAST_OPTS}`,
+  // );
+
+  // console.log(`Fetching details for proposal ID ${proposalId}`);
+  // const detailsCommand = `agd query gov proposals --output json | jq -c '.proposals[] | select(.proposal_id == "${proposalId}" or .id == "${proposalId}") | [.proposal_id or .id, .voting_end_time, .status]'`;
+  // await execCmd(detailsCommand);
 };
 
 const main = async () => {
@@ -162,8 +191,9 @@ const main = async () => {
     console.log('script:', script);
     console.log('permit:', permit);
 
-    await copyFilesToContainer();
-    await openVault();
+    // await copyFilesToContainer();
+    await copyFilesLocally();
+    // await openVault();
     await installBundles();
     await acceptProposal();
   } catch (err) {

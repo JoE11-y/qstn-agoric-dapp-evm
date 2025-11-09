@@ -11,13 +11,12 @@ network=$1
 deploy_contract() {
     local contract_path=$1
     local gateway_contract=$2
-    local agoric_lca=$3
+    local gas_service=$3
     local chain_name=$4
 
     GATEWAY_CONTRACT="$gateway_contract" \
-        AGORIC_SENDER="$agoric_lca" \
+        GAS_SERVICE="$gas_service" \
         CHAIN_NAME="$chain_name" \
-
         npx hardhat ignition deploy "$contract_path" --network "$network" --verify
 }
 
@@ -31,20 +30,21 @@ delete_deployments_folder() {
     fi
 }
 
-AGORIC_LCA=""
-
 case $network in
 fuji)
     CHAIN_NAME='Avalanche'
     GATEWAY='0xC249632c2D40b9001FE907806902f63038B737Ab'
+    GAS_SERVICE='0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6'
     ;;
 base)
     CHAIN_NAME='Base'
-    GATEWAY='0xe432150cce91c13a887f7D836923d5597adD8E31'
+    GATEWAY='0xB8Cd93C83A974649D76B1c19f311f639e62272BC'
+    GAS_SERVICE='0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6'
     ;;
 eth)
     CHAIN_NAME='Ethereum'
-    GATEWAY='0x4F4495243837681061C4743b74B3eEdf548D56A5'
+    GATEWAY='0xe432150cce91c13a887f7D836923d5597adD8E31'
+    GAS_SERVICE='0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6'
     ;;
 *)
     echo "Invalid network specified"
@@ -54,4 +54,4 @@ esac
 
 delete_deployments_folder "ignition/deployments"
 
-deploy_contract "./ignition/modules/deployQuizzlerV2.cjs" "$GATEWAY" "$AGORIC_LCA" "$CHAIN_NAME"
+deploy_contract "./ignition/modules/deployQuizzler.ts" "$GATEWAY" "$GAS_SERVICE" "$CHAIN_NAME"

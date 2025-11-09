@@ -24,7 +24,7 @@ try {
     log('Preparing offer...');
     const offer = await prepareOffer({
       publicInvitationMaker: 'createAndMonitorLCA',
-      instanceName: 'axelarGmp',
+      instanceName: 'qstnRouter',
       brandName: 'BLD',
       amount: 1n,
       source: 'contract',
@@ -53,7 +53,7 @@ try {
     log('Preparing offer...');
     const offer = await prepareOffer({
       invitationMakerName: 'makeEVMTransactionInvitation',
-      instanceName: 'axelarGmp',
+      instanceName: 'qstnRouter',
       emptyProposal: true,
       source: 'continuing',
       invitationArgs,

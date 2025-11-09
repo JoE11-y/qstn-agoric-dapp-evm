@@ -22,5 +22,10 @@
     "rewriteRelativeImportExtensions": true,
     "noEmit": true
   },
-  "include": ["asset-builder", "src", "test", "deploy.js"]
+  "include": [
+    "asset-builder",
+    "src",
+    "test",
+    "deploy.js"
+  ]
 }

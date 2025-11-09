@@ -8,136 +8,213 @@
  *   orchestration package.
  */
 
-import { makeTracer } from '@agoric/internal';
-import { Fail } from '@endo/errors';
-import { denomHash } from '@agoric/orchestration';
+import { makeTracer, NonNullish } from '@agoric/internal';
+import { Fail, makeError, q } from '@endo/errors';
 import { COSMOS_CHAINS } from '../utils/chains.js';
+import { gmpAddresses } from '../utils/gmp.js';
 
 /**
  * @import {GuestInterface, GuestOf} from '@agoric/async-flow';
  * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
- * @import {MakeAccountKit} from './qstn-account-kit.js';
  * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
  * @import {Vow} from '@agoric/vow';
  * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
- * @import {SupportedCosmosChains, SupportedEVMChains, RemoteChannelInfo} from '../utils/types.js';
+ * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
+ * @import {axelarGmpOutgoingMemo} from '../types.js';
+ * @import {CrossChainContractMessage} from "../utils/types.js";
+ * @import {Bech32Address} from '@agoric/orchestration';
  */
 
-const trace = makeTracer('CrossChainLCA');
+const trace = makeTracer('SendTransaction');
+const { entries } = Object;
 
 /**
  * @satisfies {OrchestrationFlow}
  * @param {Orchestrator} orch
- * @param {{
- *  makeAccountKit: MakeAccountKit;
- *  chainHub: GuestInterface<ChainHub>;
- *  log: GuestOf<(msg: string) => Vow<void>>;
- *  axelarRemoteChannel: Promise<RemoteChannelInfo>,
- *  osmosisRemoteChannel: Promise<RemoteChannelInfo>,
- *  injectiveRemoteChannel: Promise<RemoteChannelInfo>,
- * }} ctx
+ * @param {object} ctx
+ * @param {GuestInterface<ChainHub>} ctx.chainHub
+ * @param {GuestInterface<ZoeTools>} ctx.zoeTools
+ * @param {GuestOf<(msg: string) => Vow<void>>} ctx.log
  * @param {ZCFSeat} seat
- */
-export const createAndMonitorLCA = async (
-  orch,
-  {
-    makeAccountKit,
-    chainHub,
-    log,
-    axelarRemoteChannel,
-    osmosisRemoteChannel,
-    injectiveRemoteChannel,
-  },
-  seat,
-) => {
-  void log('Creating CrossChain LCA and monitoring transfers');
-
-  const [agoric] = await Promise.all([orch.getChain('agoric')]);
-
-  const localAccount = await agoric.makeAccount();
-  void log('localAccount created successfully');
-  const localChainAddress = await localAccount.getAddress();
-  trace('Local Chain Address:', localChainAddress);
-
-  const agoricChainId = (await agoric.getChainInfo()).chainId;
-
-  const assets = await agoric.getVBankAssetInfo();
-
-  const axelar = await axelarRemoteChannel;
-  const osmosis = await osmosisRemoteChannel;
-  const injective = await injectiveRemoteChannel;
-
-  const accountKit = makeAccountKit({
-    localAccount,
-    localChainId: agoricChainId,
-    localChainAddress,
-    assets,
-    axelarRemoteChannel: axelar,
-    osmosisRemoteChannel: osmosis,
-    injectiveRemoteChannel: injective,
-  });
-
-  void log('tap created successfully');
-  // XXX consider storing appRegistration, so we can .revoke() or .updateTargetApp()
-  // @ts-expect-error tap.receiveUpcall: 'Vow<void> | undefined' not assignable to 'Promise<any>'
-  await localAccount.monitorTransfers(accountKit.tap);
-  void log('Monitoring transfers setup successfully');
-
-  seat.exit();
-  // TODO: When used from the portfolio contract, expose the `holder` facet directly
-  // to bypass Zoe and walletFactory, since smart wallet constraints don't apply there.
-  return harden({ invitationMakers: accountKit.invitationMakers });
-};
-harden(createAndMonitorLCA);
-
-/**
- * @satisfies {OrchestrationFlow}
- * @param {Orchestrator} orch
  * @param {{
- *  chainName: SupportedCosmosChains;
- *  chainHub: GuestInterface<ChainHub>;
- *  log: GuestOf<(msg: string) => Vow<void>>;
- * }} ctx
- * @returns {Promise<RemoteChannelInfo>}
+ * messages: CrossChainContractMessage[],
+ * gasAmount: number;
+ * }} offerArgs
  */
-export const makeRemoteChannel = async (orch, { chainName, chainHub, log }) => {
-  const chain = COSMOS_CHAINS[chainName];
+export const sendTransaction = async (
+  orch,
+  { chainHub, log, zoeTools: { localTransfer, withdrawToSeat } },
+  seat,
+  offerArgs,
+) => {
+  void log('Inside sendTransaction flow');
 
-  const [agoric, remoteChain] = await Promise.all([
-    orch.getChain('agoric'),
-    orch.getChain(chain),
-  ]);
+  // Extract messages and gas amount from offer arguments
+  const { messages, gasAmount } = offerArgs;
 
-  const { chainId, stakingTokens } = await remoteChain.getChainInfo();
+  trace('Offer Args:', JSON.stringify(offerArgs));
 
-  const remoteDenom = stakingTokens[0].denom;
-  remoteDenom || Fail`${chainId} does not have stakingTokens in config`;
+  // Get proposal from seat and extract amount
+  const { give } = seat.getProposal();
+  const [[_kw, amt]] = entries(give);
 
-  void log(
-    `Creating remote channel to ${chainName} (${chain}) with denom ${remoteDenom}`,
+  // Validate transfer amount is positive
+  amt.value > 0n || Fail`IBC transfer amount must be greater than zero`;
+
+  trace('_kw, amt', _kw, amt);
+
+  // Get Agoric chain instance
+  const agoric = await orch.getChain('agoric');
+
+  // Get asset information from vbank
+  const agoricAssets = await agoric.getVBankAssetInfo();
+
+  // Find matching asset denomination
+  const { denom } = NonNullish(
+    agoricAssets.find((a) => a.brand === amt.brand),
+    `${amt.brand} not registered in vbank`,
   );
 
-  const agoricChainId = (await agoric.getChainInfo()).chainId;
+  trace('amt and brand', amt.brand);
 
-  const { transferChannel } = await chainHub.getConnectionInfo(
-    agoricChainId,
-    chainId,
-  );
-  assert(transferChannel.counterPartyChannelId, 'unable to find sourceChannel');
+  // Create local account for transactions
+  const localAccount = await agoric.makeAccount();
 
-  const localDenom = `ibc/${denomHash({
-    denom: remoteDenom,
-    channelId: transferChannel.channelId,
-  })}`;
+  // Transfer funds to local account
+  await localTransfer(seat, localAccount, give);
 
-  const remoteChainInfo = await remoteChain.getChainInfo();
+  // Calculate amount per chain for distribution
+  const amountPerChain = amt.value / BigInt(messages.length);
+  trace('Amount per chain:', amountPerChain);
 
-  return harden({
-    localDenom,
-    remoteChainInfo,
-    channelId: transferChannel.channelId,
-    remoteDenom,
-  });
+  // Process each message
+  for (const message of messages) {
+    // Validate message parameters
+    message.destinationChain != null ||
+      Fail`Destination chain must be defined for message ${message}`;
+
+    message.destinationAddress != null ||
+      Fail`Destination address must be defined for message ${message}`;
+
+    const { destinationChain, destinationAddress, type, chainType, payload } =
+      message;
+
+    // Determine connection chain
+    const chain =
+      chainType === 'evm'
+        ? COSMOS_CHAINS['Axelar']
+        : COSMOS_CHAINS[destinationChain];
+
+    const remoteChain = await orch.getChain(chain);
+
+    trace('Connection Chain', chain);
+
+    // Get remote chain information
+    const { chainId: remoteChainId, stakingTokens } =
+      await remoteChain.getChainInfo();
+
+    const remoteDenom = stakingTokens[0].denom;
+    remoteDenom || Fail`${remoteChainId} does not have stakingTokens in config`;
+
+    void log(
+      `Creating remote channel to ${destinationChain} (${chain}) with denom ${remoteDenom}`,
+    );
+
+    // Get Agoric chain ID and connection info
+    const agoricChainId = (await agoric.getChainInfo()).chainId;
+
+    const { transferChannel } = await chainHub.getConnectionInfo(
+      agoricChainId,
+      remoteChainId,
+    );
+
+    assert(
+      transferChannel.counterPartyChannelId,
+      'unable to find sourceChannel',
+    );
+
+    trace(`targets: [${destinationAddress}]`);
+
+    /**
+     * Helper function to recover if IBC Transfer fails
+     *
+     * @param {Error} e
+     */
+    const recoverFailedTransfer = async (e) => {
+      await withdrawToSeat(localAccount, seat, give);
+      const errorMsg = `IBC Transfer failed ${q(e)}`;
+      void log(`ERROR: ${errorMsg}`);
+      seat.fail(errorMsg);
+      throw makeError(errorMsg);
+    };
+
+    if (chainType === 'evm') {
+      // Handle EVM chain transfer
+      /** @type {axelarGmpOutgoingMemo} */
+      const memo = {
+        destination_chain: destinationChain,
+        destination_address: destinationAddress,
+        payload: Array.from(payload),
+        type,
+      };
+
+      // Add fee information for certain transaction types
+      if (type === 1 || type == 2) {
+        memo.fee = {
+          amount: String(gasAmount),
+          recipient: gmpAddresses.AXELAR_GAS,
+        };
+        void log(`Fee object ${JSON.stringify(memo.fee)}`);
+        trace(`Fee object ${JSON.stringify(memo.fee)}`);
+      }
+
+      void log(`Initiating GMP Transaction...`);
+      void log(`DENOM of token:${denom}`);
+
+      // Execute EVM transfer
+      try {
+        await localAccount.transfer(
+          {
+            value: gmpAddresses.AXELAR_GMP,
+            encoding: 'bech32',
+            chainId: remoteChainId,
+          },
+          {
+            denom,
+            value: amountPerChain,
+          },
+          { memo: JSON.stringify(memo) },
+        );
+        void log(`GMP Transaction sent successfully`);
+      } catch (e) {
+        return recoverFailedTransfer(e);
+      }
+    } else if (chainType === 'cosmos') {
+      // Handle Cosmos chain transfer
+      const memo = JSON.stringify(payload);
+
+      void log(`Initiating IBC Transfer...`);
+      void log(`DENOM of token:${denom}`);
+
+      // Execute Cosmos transfer
+      try {
+        await localAccount.transfer(
+          {
+            value: /** @type {Bech32Address} */ (destinationAddress),
+            encoding: 'bech32',
+            chainId: remoteChainId,
+          },
+          {
+            denom,
+            value: amountPerChain + BigInt(gasAmount),
+          },
+          { memo },
+        );
+      } catch (e) {
+        return recoverFailedTransfer(e);
+      }
+    }
+  }
 };
 
-harden(makeRemoteChannel);
+harden(sendTransaction);

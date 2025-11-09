@@ -12,7 +12,7 @@ export enum GMPMessageType {
   TokenTransfer = 3,
 }
 
-export type AxelarGmpIncomingMemo = {
+export type axelarGmpIncominMemo = {
   source_chain: string;
   source_address: string;
   payload: string;
@@ -24,7 +24,7 @@ export type AxelarFeeObject = {
   recipient: Bech32Address;
 };
 
-export type AxelarGmpOutgoingMemo = {
+export type axelarGmpOutgoingMemo = {
   destination_chain: string;
   destination_address: string;
   payload: number[] | null;
@@ -39,7 +39,7 @@ export type AccountTapState = {
   assets: any;
   axelarRemoteChannel: RemoteChannelInfo;
   osmosisRemoteChannel: RemoteChannelInfo;
-  injectiveRemoteChannel: RemoteChannelInfo;
+  neutronRemoteChannel: RemoteChannelInfo;
 };
 
 export type ContractCall = {

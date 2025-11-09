@@ -1,6 +1,6 @@
 export const COSMOS_CHAINS = {
   Osmosis: 'osmosis',
-  Injective: 'injective',
+  Neutron: 'neutron',
   Axelar: 'axelar',
 };
 
@@ -10,7 +10,7 @@ export const ActiveChainType = {
 };
 
 export const EVM_CHAINS = {
-  Avalanche: 'Avalanche',
+  Avalanche: 'avalanche',
   Base: 'base-sepolia',
   Ethereum: 'ethereum-sepolia',
 };
