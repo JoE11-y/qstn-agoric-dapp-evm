@@ -20,7 +20,7 @@ type MakeTransactionParams = {
   proposal: any;
 };
 
-type qstnRouterMemo = {
+type qstnRouterV2Memo = {
   source_chain: string;
   source_address: string;
   payload: string;
@@ -121,10 +121,10 @@ test.before(async (t) => {
 });
 
 test.beforeEach((t) => {
-  t.context.storage.data.delete('published.qstnRouter.log');
+  t.context.storage.data.delete('published.qstnRouterV2.log');
 });
 
-test.serial('makeAccount via qstnRouter', async (t) => {
+test.serial('makeAccount via qstnRouterV2', async (t) => {
   const {
     storage,
     wallet,
@@ -138,7 +138,7 @@ test.serial('makeAccount via qstnRouter', async (t) => {
     id: 'axelarMakeAccountCall',
     invitationSpec: {
       source: 'agoricContract',
-      instancePath: ['qstnRouter'],
+      instancePath: ['qstnRouterV2'],
       callPipe: [['createAndMonitorLCA']],
     },
     proposal: {
@@ -148,7 +148,7 @@ test.serial('makeAccount via qstnRouter', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside createAndMonitorLCA',
@@ -244,7 +244,7 @@ test.serial('receiveUpCall test', async (t) => {
           ],
         }),
         type: 1,
-      } satisfies qstnRouterMemo),
+      } satisfies qstnRouterV2Memo),
     }),
   );
 
@@ -317,7 +317,7 @@ test.serial('token transfers using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',
@@ -389,7 +389,7 @@ test.serial('make contract calls using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouter.log')!).values;
+    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',

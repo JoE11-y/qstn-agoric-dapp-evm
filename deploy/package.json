@@ -18,7 +18,7 @@
     "build": "yarn build:contract && yarn build:token",
     "test": "yarn esbuild:contract && ava",
     "lint:types": "tsc",
-    "deploy": "yarn build:contract && runInsideContainer=false planFile=qstnRouter-plan.json node deploy.js",
+    "deploy": "yarn build:contract && runInsideContainer=false planFile=qstnRouterV2-plan.json node deploy.js",
     "register:token": "runInsideContainer=false planFile=eval-register-interchain-bank-assets-plan.json node deploy.js"
   },
   "ava": {

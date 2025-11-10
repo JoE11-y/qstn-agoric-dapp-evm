@@ -1,5 +1,5 @@
 import { makeHelpers } from '@agoric/deploy-script-support';
-import { getManifest, qstnRouter } from './start-contract.js';
+import { getManifest, qstnRouterV2 } from './start-contract.js';
 import { assetInfo } from './static-config.js';
 import { getChainConfig } from './get-chain-config.js';
 import { parseArgs } from 'node:util';
@@ -57,7 +57,7 @@ export default async (homeP, endowments) => {
 
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
 
-  await writeCoreEval(qstnRouter.name, (utils) =>
+  await writeCoreEval(qstnRouterV2.name, (utils) =>
     defaultProposalBuilder(utils, opts),
   );
 };

@@ -20,12 +20,12 @@ const trace = makeTracer('start qstn contract', true);
  * @param {BootstrapPowers & {
  *   installation: {
  *     consume: {
- *       qstnRouter: Installation<StartFn>;
+ *       qstnRouterV2: Installation<StartFn>;
  *     };
  *   };
  *   instance: {
  *     produce: {
- *       qstnRouter: Producer<Instance<StartFn>>
+ *       qstnRouterV2: Producer<Instance<StartFn>>
  *     };
  *   };
  *   issuer: {
@@ -42,7 +42,7 @@ const trace = makeTracer('start qstn contract', true);
  *   };
  * }} config
  */
-export const qstnRouter = async (
+export const qstnRouterV2 = async (
   {
     consume: {
       agoricNames,
@@ -54,10 +54,10 @@ export const qstnRouter = async (
       startUpgradable,
     },
     installation: {
-      consume: { qstnRouter },
+      consume: { qstnRouterV2 },
     },
     instance: {
-      produce: { qstnRouter: produceInstance },
+      produce: { qstnRouterV2: produceInstance },
     },
     issuer: {
       consume: { BLD, IST },
@@ -65,7 +65,7 @@ export const qstnRouter = async (
   },
   { options: { chainInfo, assetInfo } },
 ) => {
-  trace(qstnRouter.name);
+  trace(qstnRouterV2.name);
 
   const marshaller = await E(board).getReadonlyMarshaller();
 
@@ -78,7 +78,7 @@ export const qstnRouter = async (
       marshaller,
       orchestrationService: cosmosInterchainService,
       storageNode: E(NonNullish(await chainStorage)).makeChildNode(
-        'qstnRouter',
+        'qstnRouterV2',
       ),
       timerService: chainTimerService,
       chainInfo,
@@ -119,20 +119,20 @@ export const qstnRouter = async (
 
   trace('Starting contract instance');
   const { instance } = await E(startUpgradable)({
-    label: 'qstnRouter',
-    installation: qstnRouter,
+    label: 'qstnRouterV2',
+    installation: qstnRouterV2,
     issuerKeywordRecord,
     privateArgs,
   });
   produceInstance.resolve(instance);
   trace('done');
 };
-harden(qstnRouter);
+harden(qstnRouterV2);
 
 export const getManifest = ({ restoreRef }, { installationRef, options }) => {
   return {
     manifest: {
-      [qstnRouter.name]: {
+      [qstnRouterV2.name]: {
         consume: {
           agoricNames: true,
           board: true,
@@ -144,10 +144,10 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
           startUpgradable: true,
         },
         installation: {
-          consume: { qstnRouter: true },
+          consume: { qstnRouterV2: true },
         },
         instance: {
-          produce: { qstnRouter: true },
+          produce: { qstnRouterV2: true },
         },
         issuer: {
           consume: { BLD: true, IST: true },
@@ -155,7 +155,7 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
       },
     },
     installations: {
-      qstnRouter: restoreRef(installationRef),
+      qstnRouterV2: restoreRef(installationRef),
     },
     options,
   };
