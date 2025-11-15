@@ -1,5 +1,5 @@
 import { makeHelpers } from '@agoric/deploy-script-support';
-import { getManifest, qstnRouterV2 } from './start-contract.js';
+import { getManifest, startQstnRouter } from './start-contract.js';
 import { assetInfo } from './static-config.js';
 import { getChainConfig } from './get-chain-config.js';
 import { parseArgs } from 'node:util';
@@ -48,8 +48,6 @@ export default async (homeP, endowments) => {
     peer: flags.peer,
   });
 
-  console.log('Obtained chainDetails:', chainDetails);
-
   const opts = harden({
     chainInfo: chainDetails,
     assetInfo: parseAssetInfo(),
@@ -57,7 +55,7 @@ export default async (homeP, endowments) => {
 
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
 
-  await writeCoreEval(qstnRouterV2.name, (utils) =>
+  await writeCoreEval(startQstnRouter.name, (utils) =>
     defaultProposalBuilder(utils, opts),
   );
 };

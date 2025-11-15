@@ -38,7 +38,6 @@ const { entries } = Object;
  * @param {ZCFSeat} seat
  * @param {{
  * messages: CrossChainContractMessage[],
- * gasAmount: number;
  * }} offerArgs
  */
 export const sendTransaction = async (
@@ -50,7 +49,7 @@ export const sendTransaction = async (
   void log('Inside sendTransaction flow');
 
   // Extract messages and gas amount from offer arguments
-  const { messages, gasAmount } = offerArgs;
+  const { messages } = offerArgs;
 
   trace('Offer Args:', JSON.stringify(offerArgs));
 
@@ -60,6 +59,15 @@ export const sendTransaction = async (
 
   // Validate transfer amount is positive
   amt.value > 0n || Fail`IBC transfer amount must be greater than zero`;
+
+  // Add up total amount required for all chains
+  const totalRequired = messages.reduce(
+    (acc, msg) => acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
+    0n,
+  );
+
+  totalRequired === amt.value ||
+    Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
 
   trace('_kw, amt', _kw, amt);
 
@@ -82,10 +90,6 @@ export const sendTransaction = async (
 
   // Transfer funds to local account
   await localTransfer(seat, localAccount, give);
-
-  // Calculate amount per chain for distribution
-  const amountPerChain = amt.value / BigInt(messages.length);
-  trace('Amount per chain:', amountPerChain);
 
   // Process each message
   for (const message of messages) {
@@ -161,7 +165,7 @@ export const sendTransaction = async (
       // Add fee information for certain transaction types
       if (type === 1 || type == 2) {
         memo.fee = {
-          amount: String(gasAmount),
+          amount: String(message.amountFee),
           recipient: gmpAddresses.AXELAR_GAS,
         };
         void log(`Fee object ${JSON.stringify(memo.fee)}`);
@@ -181,7 +185,7 @@ export const sendTransaction = async (
           },
           {
             denom,
-            value: amountPerChain,
+            value: BigInt(message.amountForChain) + BigInt(message.amountFee),
           },
           { memo: JSON.stringify(memo) },
         );
@@ -206,7 +210,7 @@ export const sendTransaction = async (
           },
           {
             denom,
-            value: amountPerChain + BigInt(gasAmount),
+            value: BigInt(message.amountForChain) + BigInt(message.amountFee),
           },
           { memo },
         );

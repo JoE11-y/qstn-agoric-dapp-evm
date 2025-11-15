@@ -1,6 +1,6 @@
 sequenceDiagram
   participant AgoricUser as Agoric Account
-  participant qstnRouter as Axelar GMP Contract
+  participant startQstnRouter as Axelar GMP Contract
   participant EVMAccountKit as EVM Account Kit
 
   participant Axelar as Axelar Network
@@ -15,8 +15,8 @@ sequenceDiagram
 
 
   %% Wallet creation flow
-  AgoricUser->>qstnRouter: createAndMonitorLCA()<br>Create a new EVMAccountKit
-  qstnRouter->>EVMAccountKit: prepareEvmAccountKit()<br>Instantiates EVMAccountKit
+  AgoricUser->>startQstnRouter: createAndMonitorLCA()<br>Create a new EVMAccountKit
+  startQstnRouter->>EVMAccountKit: prepareEvmAccountKit()<br>Instantiates EVMAccountKit
   EVMAccountKit->>AgoricUser: Return EvmAccountKit object with address agoric1XXX
   EVMAccountKit-->>Axelar: Send Message to create remote EVM wallet
   Axelar-->>Factory: Make call to create a new wallet for agoric1XXX

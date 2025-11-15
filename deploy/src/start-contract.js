@@ -20,12 +20,12 @@ const trace = makeTracer('start qstn contract', true);
  * @param {BootstrapPowers & {
  *   installation: {
  *     consume: {
- *       qstnRouterV2: Installation<StartFn>;
+ *       qstnRouter: Installation<StartFn>;
  *     };
  *   };
  *   instance: {
  *     produce: {
- *       qstnRouterV2: Producer<Instance<StartFn>>
+ *       qstnRouter: Producer<Instance<StartFn>>
  *     };
  *   };
  *   issuer: {
@@ -42,7 +42,7 @@ const trace = makeTracer('start qstn contract', true);
  *   };
  * }} config
  */
-export const qstnRouterV2 = async (
+export const startQstnRouter = async (
   {
     consume: {
       agoricNames,
@@ -54,10 +54,10 @@ export const qstnRouterV2 = async (
       startUpgradable,
     },
     installation: {
-      consume: { qstnRouterV2 },
+      consume: { qstnRouter },
     },
     instance: {
-      produce: { qstnRouterV2: produceInstance },
+      produce: { qstnRouter: produceInstance },
     },
     issuer: {
       consume: { BLD, IST },
@@ -65,7 +65,7 @@ export const qstnRouterV2 = async (
   },
   { options: { chainInfo, assetInfo } },
 ) => {
-  trace(qstnRouterV2.name);
+  trace(startQstnRouter.name);
 
   const marshaller = await E(board).getReadonlyMarshaller();
 
@@ -78,7 +78,7 @@ export const qstnRouterV2 = async (
       marshaller,
       orchestrationService: cosmosInterchainService,
       storageNode: E(NonNullish(await chainStorage)).makeChildNode(
-        'qstnRouterV2',
+        'qstnRouter',
       ),
       timerService: chainTimerService,
       chainInfo,
@@ -98,41 +98,39 @@ export const qstnRouterV2 = async (
     E(agoricNames).lookup('issuer', 'AXL'),
   );
 
-  // const uosmoIssuer = await safeFulfill(() =>
-  //   E(agoricNames).lookup('issuer', 'OSMO'),
-  // );
+  const atomIssuer = await safeFulfill(() =>
+    E(agoricNames).lookup('issuer', 'ATOM'),
+  );
 
   // const ntrnIssuer = await safeFulfill(() =>
   //   E(agoricNames).lookup('issuer', 'NTRN'),
   // );
 
-  // const atomIssuer = await safeFulfill(() =>
-
   const issuerKeywordRecord = harden({
     BLD: await BLD,
     IST: await IST,
     ...(axlIssuer && { AXL: axlIssuer }),
-    // ...(uosmoIssuer && { OSMO: uosmoIssuer }),
+    ...(atomIssuer && { ATOM: atomIssuer }),
     // ...(ntrnIssuer && { untrn: ntrnIssuer }),
   });
   trace('issuerKeywordRecord', issuerKeywordRecord);
 
   trace('Starting contract instance');
   const { instance } = await E(startUpgradable)({
-    label: 'qstnRouterV2',
-    installation: qstnRouterV2,
+    label: 'qstnRouter',
+    installation: qstnRouter,
     issuerKeywordRecord,
     privateArgs,
   });
   produceInstance.resolve(instance);
   trace('done');
 };
-harden(qstnRouterV2);
+harden(startQstnRouter);
 
 export const getManifest = ({ restoreRef }, { installationRef, options }) => {
   return {
     manifest: {
-      [qstnRouterV2.name]: {
+      [startQstnRouter.name]: {
         consume: {
           agoricNames: true,
           board: true,
@@ -140,22 +138,21 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
           chainStorage: true,
           cosmosInterchainService: true,
           localchain: true,
-
           startUpgradable: true,
         },
         installation: {
-          consume: { qstnRouterV2: true },
+          consume: { qstnRouter: true },
         },
         instance: {
-          produce: { qstnRouterV2: true },
+          produce: { qstnRouter: true },
         },
         issuer: {
-          consume: { BLD: true, IST: true },
+          consume: { BLD: true, IST: true, AXL: true, ATOM: true },
         },
       },
     },
     installations: {
-      qstnRouterV2: restoreRef(installationRef),
+      qstnRouter: restoreRef(installationRef),
     },
     options,
   };

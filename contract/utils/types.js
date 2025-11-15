@@ -30,6 +30,8 @@ import '@agoric/vats/src/types.js';
  * @property {ChainType} chainType
  * @property {any} payload
  * @property {SupportedEVMChains | SupportedCosmosChains} destinationChain
+ * @property {string} amountFee
+ * @property {string} amountForChain
  *
  */
 

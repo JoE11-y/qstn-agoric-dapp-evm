@@ -20,7 +20,7 @@ type MakeTransactionParams = {
   proposal: any;
 };
 
-type qstnRouterV2Memo = {
+type startQstnRouterMemo = {
   source_chain: string;
   source_address: string;
   payload: string;
@@ -121,10 +121,10 @@ test.before(async (t) => {
 });
 
 test.beforeEach((t) => {
-  t.context.storage.data.delete('published.qstnRouterV2.log');
+  t.context.storage.data.delete('published.startQstnRouter.log');
 });
 
-test.serial('makeAccount via qstnRouterV2', async (t) => {
+test.serial('makeAccount via startQstnRouter', async (t) => {
   const {
     storage,
     wallet,
@@ -138,7 +138,7 @@ test.serial('makeAccount via qstnRouterV2', async (t) => {
     id: 'axelarMakeAccountCall',
     invitationSpec: {
       source: 'agoricContract',
-      instancePath: ['qstnRouterV2'],
+      instancePath: ['startQstnRouter'],
       callPipe: [['createAndMonitorLCA']],
     },
     proposal: {
@@ -148,7 +148,7 @@ test.serial('makeAccount via qstnRouterV2', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
+    JSON.parse(storage.data.get('published.startQstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside createAndMonitorLCA',
@@ -244,7 +244,7 @@ test.serial('receiveUpCall test', async (t) => {
           ],
         }),
         type: 1,
-      } satisfies qstnRouterV2Memo),
+      } satisfies startQstnRouterMemo),
     }),
   );
 
@@ -317,7 +317,7 @@ test.serial('token transfers using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
+    JSON.parse(storage.data.get('published.startQstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',
@@ -389,7 +389,7 @@ test.serial('make contract calls using lca', async (t) => {
   });
 
   const getLogged = () =>
-    JSON.parse(storage.data.get('published.qstnRouterV2.log')!).values;
+    JSON.parse(storage.data.get('published.startQstnRouter.log')!).values;
 
   t.deepEqual(getLogged(), [
     'Inside sendGmp',
